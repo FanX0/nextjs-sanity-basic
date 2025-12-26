@@ -2,13 +2,12 @@ import { PortableText } from "next-sanity";
 import { type Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { client } from "@/app/lib/sanity/client";
 import { urlFor } from "@/app/lib/sanity/image";
-import { type Post } from "@/app/types/sanity";
+import { getAllPostsSlugs, getPostBySlug } from "@/app/lib/sanity/api";
 
-const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
-
-const options = { next: { revalidate: 30 } };
+export async function generateStaticParams() {
+  return await getAllPostsSlugs();
+}
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -16,7 +15,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = await client.fetch<Post>(POST_QUERY, { slug }, options);
+  const post = await getPostBySlug(slug);
 
   return {
     title: post?.title,
@@ -25,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const { slug } = await params;
-  const post = await client.fetch<Post>(POST_QUERY, { slug }, options);
+  const post = await getPostBySlug(slug);
 
   const postImageUrl = post?.image
     ? urlFor(post.image).width(550).height(310).url()
